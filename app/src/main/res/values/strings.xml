@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">QR Screen Scanner</string>
+    <string name="tile_label">Scan Screen QR</string>
+    <string name="notification_channel_name">Screen Capture Service</string>
+    <string name="notification_channel_desc">Used while capturing screen to decode QR codes</string>
+    <string name="notification_service_running">Memindai QR di layar…</string>
+    <string name="no_qr_found">Tidak ada QR code yang terdeteksi di layar</string>
+    <string name="permission_denied">Izin tangkapan layar ditolak</string>
+</resources>
