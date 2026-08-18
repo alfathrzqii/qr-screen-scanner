@@ -36,7 +36,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             val releaseSigning = signingConfigs.getByName("release")
             if (releaseSigning.storeFile != null && releaseSigning.storeFile!!.exists()) {
                 signingConfig = releaseSigning
@@ -75,7 +76,13 @@ android {
 
     packaging {
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += setOf(
+                "/META-INF/{AL2.0,LGPL2.1}",
+                "/META-INF/INDEX.LIST",
+                "/META-INF/DEPENDENCIES",
+                "/META-INF/LICENSE*",
+                "/META-INF/NOTICE*"
+            )
         }
     }
 }
@@ -95,8 +102,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.extended)
 
-    // ML Kit Barcode Scanning (Bundled / Offline)
-    implementation(libs.mlkit.barcode.scanning)
+    // ML Kit Barcode Scanning (Google Play Services Dynamic Model - Ultra Lightweight)
+    implementation(libs.play.services.mlkit.barcode.scanning)
 
     // Room Database
     implementation(libs.room.runtime)
