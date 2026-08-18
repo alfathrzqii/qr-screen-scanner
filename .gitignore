@@ -16,3 +16,7 @@ local.properties
 *.apk
 *.aab
 log.txt
+temp/
+*.jks
+*.keystore
+secrets.properties
