@@ -18,9 +18,9 @@ A sleek, offline-first Android utility app that scans QR codes directly from you
 
 ## 🏗️ Architecture & Tech Stack
 
-- **UI**: Jetpack Compose + Material 3 (Dark Theme)
+- **UI**: Jetpack Compose + Material 3 (Dark Theme & Dynamic Color)
 - **Language**: Kotlin 1.9 + Coroutines & StateFlow
-- **ML / AI**: Google ML Kit Barcode Scanning (`com.google.mlkit:barcode-scanning`)
+- **ML / AI**: Ultra-lightweight Google ML Kit Barcode Scanning (`play-services-mlkit-barcode-scanning`)
 - **Screen Capture**: Android `MediaProjectionManager`, `VirtualDisplay`, `ImageReader`
 - **Background Service**: `MediaProjection` Foreground Service (Android 14/15 compliant)
 - **System Integration**: `android.service.quicksettings.TileService`
