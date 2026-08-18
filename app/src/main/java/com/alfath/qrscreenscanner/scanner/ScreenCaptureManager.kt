@@ -13,6 +13,7 @@ import android.os.Looper
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeoutOrNull
 
 class ScreenCaptureManager(private val context: Context) {
@@ -27,10 +28,11 @@ class ScreenCaptureManager(private val context: Context) {
         val height = metrics.heightPixels
         val density = metrics.densityDpi
 
-        val imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
+        val imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 4)
         var virtualDisplay: VirtualDisplay? = null
-        val deferredBitmap = CompletableDeferred<Bitmap?>()
         val handler = Handler(Looper.getMainLooper())
+        var latestValidBitmap: Bitmap? = null
+        val frameReceived = CompletableDeferred<Boolean>()
 
         val projectionCallback = object : MediaProjection.Callback() {
             override fun onStop() {
@@ -42,6 +44,9 @@ class ScreenCaptureManager(private val context: Context) {
         mediaProjection.registerCallback(projectionCallback, handler)
 
         try {
+            // Small delay to allow system permission dialog / scrim animation to dismiss completely
+            delay(350)
+
             virtualDisplay = mediaProjection.createVirtualDisplay(
                 "QrScreenCaptureDisplay",
                 width,
@@ -57,24 +62,31 @@ class ScreenCaptureManager(private val context: Context) {
                 var image: Image? = null
                 try {
                     image = reader.acquireLatestImage()
-                    if (image != null && !deferredBitmap.isCompleted) {
+                    if (image != null) {
                         val bitmap = convertImageToBitmap(image, width, height)
-                        deferredBitmap.complete(bitmap)
+                        if (bitmap != null && !isBitmapAllBlank(bitmap)) {
+                            latestValidBitmap = bitmap
+                            if (!frameReceived.isCompleted) {
+                                frameReceived.complete(true)
+                            }
+                        }
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    if (!deferredBitmap.isCompleted) {
-                        deferredBitmap.complete(null)
-                    }
                 } finally {
                     image?.close()
                 }
             }, handler)
 
-            // Wait with a 2.5 second timeout to acquire frame
-            return withTimeoutOrNull(2500L) {
-                deferredBitmap.await()
+            // Wait up to 3 seconds for valid frame
+            withTimeoutOrNull(3000L) {
+                frameReceived.await()
             }
+
+            // Brief pause to ensure we have the stabilized screen frame
+            delay(150)
+
+            return latestValidBitmap
         } catch (e: Exception) {
             e.printStackTrace()
             return null
@@ -89,28 +101,56 @@ class ScreenCaptureManager(private val context: Context) {
         }
     }
 
-    private fun convertImageToBitmap(image: Image, width: Int, height: Int): Bitmap {
-        val planes = image.planes
-        val buffer = planes[0].buffer
-        val pixelStride = planes[0].pixelStride
-        val rowStride = planes[0].rowStride
-        val rowPadding = rowStride - pixelStride * width
+    private fun convertImageToBitmap(image: Image, width: Int, height: Int): Bitmap? {
+        return try {
+            val planes = image.planes
+            if (planes.isEmpty()) return null
 
-        val bitmap = Bitmap.createBitmap(
-            width + rowPadding / pixelStride,
-            height,
-            Bitmap.Config.ARGB_8888
-        )
-        bitmap.copyPixelsFromBuffer(buffer)
+            val buffer = planes[0].buffer ?: return null
+            buffer.rewind()
 
-        return if (rowPadding == 0) {
-            bitmap
-        } else {
-            val cropped = Bitmap.createBitmap(bitmap, 0, 0, width, height)
-            if (cropped != bitmap) {
-                bitmap.recycle()
+            val pixelStride = planes[0].pixelStride
+            val rowStride = planes[0].rowStride
+            val rowPadding = rowStride - pixelStride * width
+
+            val bitmapWidth = width + (rowPadding / pixelStride)
+            val bitmap = Bitmap.createBitmap(
+                bitmapWidth,
+                height,
+                Bitmap.Config.ARGB_8888
+            )
+            bitmap.copyPixelsFromBuffer(buffer)
+
+            if (rowPadding == 0 && bitmapWidth == width) {
+                bitmap
+            } else {
+                val cropped = Bitmap.createBitmap(bitmap, 0, 0, width, height)
+                if (cropped != bitmap) {
+                    bitmap.recycle()
+                }
+                cropped
             }
-            cropped
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private fun isBitmapAllBlank(bitmap: Bitmap): Boolean {
+        return try {
+            val w = bitmap.width
+            val h = bitmap.height
+            // Sample multiple points (corners, center, edges)
+            val sample1 = bitmap.getPixel(w / 2, h / 2)
+            val sample2 = bitmap.getPixel(w / 4, h / 4)
+            val sample3 = bitmap.getPixel((w * 3) / 4, (h * 3) / 4)
+            val sample4 = bitmap.getPixel(w / 4, (h * 3) / 4)
+            val sample5 = bitmap.getPixel((w * 3) / 4, h / 4)
+
+            // If completely transparent black 0
+            sample1 == 0 && sample2 == 0 && sample3 == 0 && sample4 == 0 && sample5 == 0
+        } catch (_: Exception) {
+            false
         }
     }
 }
