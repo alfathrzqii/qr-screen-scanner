@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.sp
 import dev.alfathrzqii.qrscreenscanner.data.local.QrContentType
 import dev.alfathrzqii.qrscreenscanner.data.local.ScanHistoryEntity
 import dev.alfathrzqii.qrscreenscanner.ui.components.HistoryItemCard
+import dev.alfathrzqii.qrscreenscanner.ui.components.QrResultBottomSheet
 import dev.alfathrzqii.qrscreenscanner.util.ParsedQrResult
 import dev.alfathrzqii.qrscreenscanner.util.QrTypeParser
 
