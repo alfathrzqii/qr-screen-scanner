@@ -114,10 +114,11 @@ fun HistoryScreen(
                 },
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = PrimaryBlue,
                     unfocusedBorderColor = DarkBorder,
-                    containerColor = DarkSurfaceVariant,
+                    focusedContainerColor = DarkSurfaceVariant,
+                    unfocusedContainerColor = DarkSurfaceVariant,
                     focusedTextColor = TextPrimary,
                     unfocusedTextColor = TextPrimary
                 ),
