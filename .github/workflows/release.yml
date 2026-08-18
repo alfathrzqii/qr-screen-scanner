@@ -72,19 +72,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_name || github.event.inputs.version_name }}
           name: "QR Screen Scanner ${{ github.ref_name || github.event.inputs.version_name }}"
-          body: |
-            ## 🎉 QR Screen Scanner v1.0.0 Official Release
-
-            ### ✨ Fitur Utama:
-            - ⚡ **Shortcut Quick Settings Tile**: Pindai QR langsung dari Control Center tanpa screenshot atau simpan gambar.
-            - 🌈 **Material 3 Expressive & Dynamic Color**: Desain modern yang otomatis beradaptasi dengan warna wallpaper HP kamu.
-            - 🚀 **100% Offline Google ML Kit**: Deteksi instan tanpa membutuhkan koneksi internet.
-            - 🎯 **Multi-QR Highlighting**: Kotak interaktif saat terdeteksi lebih dari satu QR di layar.
-            - 📋 **Smart Action Sheet**: Buka URL di browser, salin teks, atau bagikan secara instan.
-            - 🗄️ **Riwayat Scan Lokal**: Tersimpan di database Room dengan fitur filter dan pencarian.
-
-            ---
-            *Signed Production Release APK siap diinstal dan mendukung pembaruan versi berikutnya secara langsung.*
+          body_path: temp/release_notes.md
           files: release-output/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
