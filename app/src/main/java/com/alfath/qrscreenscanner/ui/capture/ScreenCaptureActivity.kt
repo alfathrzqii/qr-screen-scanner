@@ -50,6 +50,7 @@ class ScreenCaptureActivity : ComponentActivity() {
     private var activeResult by mutableStateOf<ParsedQrResult?>(null)
     private var showMultiOverlay by mutableStateOf(false)
 
+    @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
