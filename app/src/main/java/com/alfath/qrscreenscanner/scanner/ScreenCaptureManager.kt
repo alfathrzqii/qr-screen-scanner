@@ -32,6 +32,15 @@ class ScreenCaptureManager(private val context: Context) {
         val deferredBitmap = CompletableDeferred<Bitmap?>()
         val handler = Handler(Looper.getMainLooper())
 
+        val projectionCallback = object : MediaProjection.Callback() {
+            override fun onStop() {
+                try {
+                    virtualDisplay?.release()
+                } catch (_: Exception) {}
+            }
+        }
+        mediaProjection.registerCallback(projectionCallback, handler)
+
         try {
             virtualDisplay = mediaProjection.createVirtualDisplay(
                 "QrScreenCaptureDisplay",
