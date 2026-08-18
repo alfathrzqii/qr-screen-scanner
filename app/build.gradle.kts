@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.alfath.qrscreenscanner"
+    namespace = "dev.alfathrzqii.qrscreenscanner"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.alfath.qrscreenscanner"
+        applicationId = "dev.alfathrzqii.qrscreenscanner"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
