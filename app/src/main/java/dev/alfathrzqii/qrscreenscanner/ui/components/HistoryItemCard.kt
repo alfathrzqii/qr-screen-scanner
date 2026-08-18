@@ -13,12 +13,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Sms
 import androidx.compose.material.icons.filled.TextFields
@@ -176,6 +178,9 @@ fun HistoryItemCard(
 
 private fun getCategoryMeta(type: QrContentType): Pair<ImageVector, String> {
     return when (type) {
+        QrContentType.QRIS -> Pair(Icons.Default.AccountBalanceWallet, "QRIS")
+        QrContentType.WHATSAPP -> Pair(Icons.Default.Chat, "WhatsApp")
+        QrContentType.CONTACT -> Pair(Icons.Default.Person, "Kontak")
         QrContentType.URL -> Pair(Icons.Default.Language, "Web")
         QrContentType.WIFI -> Pair(Icons.Default.Wifi, "Wi-Fi")
         QrContentType.EMAIL -> Pair(Icons.Default.Email, "Email")

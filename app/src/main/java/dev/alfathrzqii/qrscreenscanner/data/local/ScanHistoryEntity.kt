@@ -11,6 +11,9 @@ enum class QrContentType {
     PHONE,
     SMS,
     GEO,
+    QRIS,
+    WHATSAPP,
+    CONTACT,
     OTHER
 }
 

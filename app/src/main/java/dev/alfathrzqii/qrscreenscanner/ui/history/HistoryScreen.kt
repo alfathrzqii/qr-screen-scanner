@@ -59,8 +59,8 @@ import androidx.compose.ui.unit.sp
 import dev.alfathrzqii.qrscreenscanner.data.local.QrContentType
 import dev.alfathrzqii.qrscreenscanner.data.local.ScanHistoryEntity
 import dev.alfathrzqii.qrscreenscanner.ui.components.HistoryItemCard
-import dev.alfathrzqii.qrscreenscanner.ui.components.QrResultBottomSheet
 import dev.alfathrzqii.qrscreenscanner.util.ParsedQrResult
+import dev.alfathrzqii.qrscreenscanner.util.QrTypeParser
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -167,9 +167,20 @@ fun HistoryScreen(
             )
 
             FilterChip(
-                selected = selectedFilter == QrContentType.URL,
-                onClick = { viewModel.selectFilter(if (selectedFilter == QrContentType.URL) null else QrContentType.URL) },
-                label = { Text("Tautan Web") },
+                selected = selectedFilter == QrContentType.QRIS,
+                onClick = { viewModel.selectFilter(if (selectedFilter == QrContentType.QRIS) null else QrContentType.QRIS) },
+                label = { Text("QRIS") },
+                shape = RoundedCornerShape(12.dp),
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = colorScheme.primaryContainer,
+                    selectedLabelColor = colorScheme.onPrimaryContainer
+                )
+            )
+
+            FilterChip(
+                selected = selectedFilter == QrContentType.WHATSAPP,
+                onClick = { viewModel.selectFilter(if (selectedFilter == QrContentType.WHATSAPP) null else QrContentType.WHATSAPP) },
+                label = { Text("WhatsApp") },
                 shape = RoundedCornerShape(12.dp),
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = colorScheme.primaryContainer,
@@ -181,6 +192,28 @@ fun HistoryScreen(
                 selected = selectedFilter == QrContentType.WIFI,
                 onClick = { viewModel.selectFilter(if (selectedFilter == QrContentType.WIFI) null else QrContentType.WIFI) },
                 label = { Text("Wi-Fi") },
+                shape = RoundedCornerShape(12.dp),
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = colorScheme.primaryContainer,
+                    selectedLabelColor = colorScheme.onPrimaryContainer
+                )
+            )
+
+            FilterChip(
+                selected = selectedFilter == QrContentType.CONTACT,
+                onClick = { viewModel.selectFilter(if (selectedFilter == QrContentType.CONTACT) null else QrContentType.CONTACT) },
+                label = { Text("Kontak") },
+                shape = RoundedCornerShape(12.dp),
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = colorScheme.primaryContainer,
+                    selectedLabelColor = colorScheme.onPrimaryContainer
+                )
+            )
+
+            FilterChip(
+                selected = selectedFilter == QrContentType.URL,
+                onClick = { viewModel.selectFilter(if (selectedFilter == QrContentType.URL) null else QrContentType.URL) },
+                label = { Text("Tautan Web") },
                 shape = RoundedCornerShape(12.dp),
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = colorScheme.primaryContainer,
@@ -257,12 +290,7 @@ fun HistoryScreen(
                     HistoryItemCard(
                         scan = scan,
                         onClick = {
-                            selectedScanForResult = ParsedQrResult(
-                                rawValue = scan.rawValue,
-                                displayTitle = scan.displayTitle,
-                                type = scan.contentType,
-                                actionUrl = if (scan.contentType == QrContentType.URL) scan.rawValue else null
-                            )
+                            selectedScanForResult = QrTypeParser.parse(scan.rawValue)
                         },
                         onCopy = {
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
