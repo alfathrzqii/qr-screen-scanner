@@ -74,12 +74,33 @@ jobs:
           retention-days: 30
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
-        with:
-          tag_name: ${{ github.ref_name || github.event.inputs.version_name }}
-          name: "QR Screen Scanner ${{ github.ref_name || github.event.inputs.version_name }}"
-          body_path: ${{ steps.release_info.outputs.notes_file }}
-          files: release-output/*.apk
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          if [ -z "$TAG_NAME" ] || [ "$TAG_NAME" = "main" ]; then
+            TAG_NAME="${{ github.event.inputs.version_name || 'v1.0.0' }}"
+          fi
+
+          NOTES_FILE="releases/${TAG_NAME}.md"
+          if [ ! -f "$NOTES_FILE" ]; then
+            NOTES_FILE="releases/release_notes.md"
+          fi
+
+          TITLE="QR Screen Scanner ${TAG_NAME}"
+
+          # Delete existing release draft/entry for this tag if already present
+          gh release delete "$TAG_NAME" --yes 2>/dev/null || true
+
+          if [ -f "$NOTES_FILE" ]; then
+            echo "Publishing release with notes from $NOTES_FILE"
+            gh release create "$TAG_NAME" release-output/*.apk \
+              --title "$TITLE" \
+              --notes-file "$NOTES_FILE"
+          else
+            echo "Publishing release with auto-generated notes"
+            gh release create "$TAG_NAME" release-output/*.apk \
+              --title "$TITLE" \
+              --generate-notes
+          fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
