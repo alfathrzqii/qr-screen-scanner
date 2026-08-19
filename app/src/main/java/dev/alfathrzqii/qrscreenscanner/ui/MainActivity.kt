@@ -227,6 +227,7 @@ fun DashboardGuideSection(
     onLaunchScan: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    var selectedGuideMode by remember { mutableIntStateOf(0) } // 0: Bola Pintas, 1: Control Center, 2: App Shortcut
 
     Column(
         modifier = Modifier
@@ -269,7 +270,7 @@ fun DashboardGuideSection(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Tile Control Center Aktif",
+                            text = "Pintasan Layar Siap Digunakan",
                             color = colorScheme.onSecondaryContainer,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold
@@ -287,7 +288,7 @@ fun DashboardGuideSection(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Saat melihat postingan QR di Instagram, TikTok, WhatsApp, atau browser, cukup tarik Control Center HP kamu dan tekan tile 'Scan Screen QR'.",
+                    text = "Gunakan Bola Pintas Xiaomi, Control Center Tile, atau Shortcut di Home Screen untuk memindai QR langsung dari layar aplikasi lain dalam 1 ketukan.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = colorScheme.onSurfaceVariant,
                     lineHeight = 21.sp
@@ -336,7 +337,7 @@ fun DashboardGuideSection(
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "Panduan Pemasangan Shortcut",
+                text = "Panduan Pemasangan Pintasan",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = colorScheme.onSurface
@@ -345,30 +346,147 @@ fun DashboardGuideSection(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        GuideStepItem(
-            stepNumber = "1",
-            icon = Icons.Default.NotificationsActive,
-            title = "Tarik Panel Notifikasi 2 Kali",
-            description = "Geser layar HP dari atas ke bawah sampai seluruh tombol pintasan Control Center terbuka penuh."
-        )
+        // Expressive Guide Switcher Chips
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            GuideModeChip(
+                title = "Bola Pintas",
+                subtitle = "Xiaomi / POCO",
+                selected = selectedGuideMode == 0,
+                modifier = Modifier.weight(1f),
+                onClick = { selectedGuideMode = 0 }
+            )
+            GuideModeChip(
+                title = "Tile Control",
+                subtitle = "Quick Settings",
+                selected = selectedGuideMode == 1,
+                modifier = Modifier.weight(1f),
+                onClick = { selectedGuideMode = 1 }
+            )
+            GuideModeChip(
+                title = "App Shortcut",
+                subtitle = "Home Screen",
+                selected = selectedGuideMode == 2,
+                modifier = Modifier.weight(1f),
+                onClick = { selectedGuideMode = 2 }
+            )
+        }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        GuideStepItem(
-            stepNumber = "2",
-            icon = Icons.Default.Tune,
-            title = "Tekan Tombol Edit Tile",
-            description = "Ketuk ikon pensil atau menu titik tiga di Control Center untuk masuk ke mode penyesuaian tombol."
-        )
+        when (selectedGuideMode) {
+            0 -> {
+                GuideStepItem(
+                    stepNumber = "1",
+                    icon = Icons.Default.Smartphone,
+                    title = "Buka Setelan Bola Pintas",
+                    description = "Masuk ke Setelan > Setelan Tambahan > Bola Pintas (Quick Ball) di HP Xiaomi/Redmi kamu."
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                GuideStepItem(
+                    stepNumber = "2",
+                    icon = Icons.Default.Tune,
+                    title = "Aktifkan & Pilih Pintasan",
+                    description = "Nyalakan 'Hidupkan Bola Pintas', kemudian ketuk menu 'Pilih Pintasan'."
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                GuideStepItem(
+                    stepNumber = "3",
+                    icon = Icons.Default.CheckCircle,
+                    title = "Pilih Aplikasi 'Pindai Layar'",
+                    description = "Ganti salah satu slot pintasan dengan memilih Aplikasi > 'Pindai Layar'. Sekarang kamu bisa scan langsung dari bola melayang!"
+                )
+            }
+            1 -> {
+                GuideStepItem(
+                    stepNumber = "1",
+                    icon = Icons.Default.NotificationsActive,
+                    title = "Tarik Panel Notifikasi 2 Kali",
+                    description = "Geser layar HP dari atas ke bawah sampai seluruh tombol pintasan Control Center terbuka penuh."
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                GuideStepItem(
+                    stepNumber = "2",
+                    icon = Icons.Default.Tune,
+                    title = "Tekan Tombol Edit Tile",
+                    description = "Ketuk ikon pensil atau menu titik tiga di Control Center untuk masuk ke mode penyesuaian tombol."
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                GuideStepItem(
+                    stepNumber = "3",
+                    icon = Icons.Default.CheckCircle,
+                    title = "Geser 'Scan Screen QR' ke Atas",
+                    description = "Temukan icon 'Scan Screen QR' pada daftar tile di bawah, lalu tahan dan geser ke panel shortcut aktif utama."
+                )
+            }
+            2 -> {
+                GuideStepItem(
+                    stepNumber = "1",
+                    icon = Icons.Default.TouchApp,
+                    title = "Tekan Lama Ikon Aplikasi",
+                    description = "Di Home Screen atau App Drawer, tahan jari kamu pada ikon aplikasi QR Screen Scanner."
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                GuideStepItem(
+                    stepNumber = "2",
+                    icon = Icons.Default.Tune,
+                    title = "Pilih Menu 'Pindai Layar'",
+                    description = "Akan muncul popup menu dengan pilihan pintasan 'Pindai Layar' (Direct Scan)."
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                GuideStepItem(
+                    stepNumber = "3",
+                    icon = Icons.Default.CheckCircle,
+                    title = "Pin ke Layar Utama",
+                    description = "Tahan ikon pintasan 'Pindai Layar' tersebut lalu geser dan tempatkan langsung di Home Screen kamu."
+                )
+            }
+        }
+    }
+}
 
-        Spacer(modifier = Modifier.height(12.dp))
+@Composable
+fun GuideModeChip(
+    title: String,
+    subtitle: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val containerColor = if (selected) colorScheme.primaryContainer else colorScheme.surfaceContainerLow
+    val contentColor = if (selected) colorScheme.onPrimaryContainer else colorScheme.onSurface
+    val borderColor = if (selected) colorScheme.primary else colorScheme.outlineVariant.copy(alpha = 0.4f)
 
-        GuideStepItem(
-            stepNumber = "3",
-            icon = Icons.Default.CheckCircle,
-            title = "Geser 'Scan Screen QR' ke Atas",
-            description = "Temukan icon 'Scan Screen QR' pada daftar tile di bawah, lalu tahan dan geser ke panel shortcut aktif utama."
-        )
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(14.dp),
+        color = containerColor,
+        border = androidx.compose.foundation.BorderStroke(if (selected) 1.5.dp else 1.dp, borderColor),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                color = contentColor,
+                maxLines = 1
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.labelSmall,
+                color = if (selected) contentColor.copy(alpha = 0.8f) else colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                fontSize = 10.sp
+            )
+        }
     }
 }
 

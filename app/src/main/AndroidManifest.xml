@@ -52,6 +52,30 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
+        </activity>
+
+        <!-- Direct Scan Launcher Entry (for Xiaomi Quick Ball, Edge Panel, Home shortcuts) -->
+        <activity
+            android:name=".ui.DirectScanActivity"
+            android:exported="true"
+            android:label="@string/direct_scan_label"
+            android:icon="@drawable/ic_qr_scan_tile"
+            android:theme="@style/Theme.QrScreenScanner.Transparent"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
 
         <!-- Transparent Helper Activity for MediaProjection prompt & Result Overlay -->

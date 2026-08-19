@@ -2,6 +2,9 @@
 <resources>
     <string name="app_name">QR Screen Scanner</string>
     <string name="tile_label">Scan Screen QR</string>
+    <string name="direct_scan_label">Pindai Layar</string>
+    <string name="direct_scan_short_label">Pindai Layar</string>
+    <string name="direct_scan_long_label">Pindai QR di Layar</string>
     <string name="notification_channel_name">Screen Capture Service</string>
     <string name="notification_channel_desc">Used while capturing screen to decode QR codes</string>
     <string name="notification_service_running">Memindai QR di layar…</string>
