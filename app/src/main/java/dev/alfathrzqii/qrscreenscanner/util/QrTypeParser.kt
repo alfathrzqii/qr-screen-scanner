@@ -240,45 +240,114 @@ object QrTypeParser {
     }
 
     private fun isWhatsAppUrl(url: String): Boolean {
-        val lower = url.lowercase(Locale.ROOT)
-        return lower.startsWith("https://wa.me") ||
-                lower.startsWith("http://wa.me") ||
-                lower.startsWith("wa.me") ||
-                lower.contains("api.whatsapp.com") ||
-                lower.startsWith("whatsapp://")
+        val trimmed = url.trim()
+        val lower = trimmed.lowercase(Locale.ROOT)
+        val clean = lower
+            .removePrefix("https://")
+            .removePrefix("http://")
+            .removePrefix("www.")
+
+        return lower.startsWith("whatsapp://") ||
+                clean.startsWith("wa.me") ||
+                clean.startsWith("wa.link") ||
+                clean.startsWith("chat.whatsapp.com") ||
+                clean.startsWith("api.whatsapp.com") ||
+                clean.startsWith("whatsapp.com")
     }
 
     private fun parseWhatsApp(raw: String, url: String): ParsedQrResult {
-        var phone = ""
+        val normalizedUrl = if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("whatsapp://")) {
+            "https://$url"
+        } else {
+            url
+        }
+
+        var phone: String? = null
         var message: String? = null
+        var customTitle: String? = null
+        var customSubtitle: String? = null
 
         try {
-            val uri = Uri.parse(if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("whatsapp://")) "https://$url" else url)
-            
-            if (url.lowercase(Locale.ROOT).startsWith("whatsapp://")) {
-                phone = uri.getQueryParameter("phone") ?: ""
-                message = uri.getQueryParameter("text")
-            } else if (uri.host?.contains("wa.me") == true) {
-                phone = uri.path?.removePrefix("/") ?: ""
-                message = uri.getQueryParameter("text")
-            } else if (uri.host?.contains("api.whatsapp.com") == true) {
-                phone = uri.getQueryParameter("phone") ?: ""
-                message = uri.getQueryParameter("text")
+            val uri = Uri.parse(normalizedUrl)
+            val host = uri.host?.lowercase(Locale.ROOT)?.removePrefix("www.") ?: ""
+            val scheme = uri.scheme?.lowercase(Locale.ROOT) ?: ""
+            val path = uri.path ?: ""
+
+            when {
+                // 1. Group Invite: chat.whatsapp.com/XXX or whatsapp://chat?code=XXX
+                host == "chat.whatsapp.com" || (scheme == "whatsapp" && (host == "chat" || uri.getQueryParameter("code") != null)) -> {
+                    customTitle = "Undangan Grup WhatsApp"
+                    customSubtitle = "Gabung grup via tautan undangan WhatsApp"
+                }
+
+                // 2. Channel: whatsapp.com/channel/XXX
+                host == "whatsapp.com" && path.lowercase(Locale.ROOT).startsWith("/channel/") -> {
+                    customTitle = "Saluran WhatsApp"
+                    customSubtitle = "Buka dan ikuti saluran resmi di WhatsApp"
+                }
+
+                // 3. WhatsApp Business Catalog / Message Shortlink: wa.me/message/XXX
+                host == "wa.me" && path.lowercase(Locale.ROOT).startsWith("/message") -> {
+                    customTitle = "Pesan Bisnis WhatsApp"
+                    customSubtitle = "Buka tautan katalog atau pesan WhatsApp Business"
+                }
+
+                // 4. wa.link shortlink: wa.link/XXX
+                host == "wa.link" -> {
+                    customTitle = "Tautan WhatsApp (wa.link)"
+                    customSubtitle = "Kirim pesan langsung via tautan cepat wa.link"
+                }
+
+                // 5. Direct WhatsApp Chat: wa.me/62xxx, api.whatsapp.com/send, whatsapp://send
+                scheme == "whatsapp" -> {
+                    phone = uri.getQueryParameter("phone")?.ifBlank { null }
+                    message = uri.getQueryParameter("text")?.ifBlank { null }
+                }
+
+                host == "wa.me" -> {
+                    val rawPhone = path.removePrefix("/").substringBefore("?")
+                    if (rawPhone.isNotBlank() && rawPhone.all { it.isDigit() || it == '+' }) {
+                        phone = rawPhone
+                    }
+                    message = uri.getQueryParameter("text")?.ifBlank { null }
+                }
+
+                host == "api.whatsapp.com" -> {
+                    phone = uri.getQueryParameter("phone")?.ifBlank { null }
+                    message = uri.getQueryParameter("text")?.ifBlank { null }
+                }
+
+                else -> {
+                    customTitle = "Tautan WhatsApp"
+                    customSubtitle = "Buka tautan di aplikasi WhatsApp"
+                }
             }
         } catch (_: Exception) {}
 
-        val displayPhone = if (phone.isNotEmpty()) {
-            if (phone.startsWith("62")) "+62 " + phone.substring(2) else phone
+        val displayTitle: String
+        val subtitle: String?
+
+        if (!phone.isNullOrBlank()) {
+            val cleanDigits = phone.replace(Regex("[^0-9]"), "")
+            val displayPhone = when {
+                cleanDigits.startsWith("62") -> "+62 " + cleanDigits.substring(2)
+                cleanDigits.startsWith("08") -> "+62 8" + cleanDigits.substring(2)
+                phone.startsWith("+") -> phone
+                else -> "+$phone"
+            }
+            displayTitle = "WhatsApp: $displayPhone"
+            subtitle = message?.let { "\"$it\"" } ?: "Kirim pesan langsung via WhatsApp"
         } else {
-            "Kontak WhatsApp"
+            displayTitle = customTitle ?: "WhatsApp"
+            subtitle = message?.let { "\"$it\"" } ?: customSubtitle ?: "Buka di aplikasi WhatsApp"
         }
 
         return ParsedQrResult(
             rawValue = raw,
-            displayTitle = "WhatsApp: $displayPhone",
-            subtitle = message?.let { "\"$it\"" } ?: "Kirim pesan langsung via WhatsApp",
+            displayTitle = displayTitle,
+            subtitle = subtitle,
             type = QrContentType.WHATSAPP,
-            actionUrl = url,
+            actionUrl = normalizedUrl,
             whatsappPhone = phone,
             whatsappMessage = message
         )

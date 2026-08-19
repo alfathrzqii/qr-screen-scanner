@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.sp
 import dev.alfathrzqii.qrscreenscanner.data.local.QrContentType
 import dev.alfathrzqii.qrscreenscanner.util.ParsedQrResult
 import dev.alfathrzqii.qrscreenscanner.util.SmartActionHandler
+import dev.alfathrzqii.qrscreenscanner.util.WhatsAppPackage
 import dev.alfathrzqii.qrscreenscanner.util.WifiConnectionHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -345,6 +346,10 @@ private fun WhatsAppCard(result: ParsedQrResult, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
     val waGreen = Color(0xFF25D366)
+    val waBusinessColor = Color(0xFF0F7D63)
+
+    val installedPackages = remember { SmartActionHandler.getInstalledWhatsAppPackages(context) }
+    val hasBothWhatsApp = installedPackages.size > 1
 
     Surface(
         shape = RoundedCornerShape(18.dp),
@@ -362,14 +367,14 @@ private fun WhatsAppCard(result: ParsedQrResult, onDismiss: () -> Unit) {
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = result.whatsappPhone?.let { if (it.isNotEmpty()) "+$it" else "WhatsApp Chat" } ?: "WhatsApp",
+                    text = result.displayTitle,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = colorScheme.onSurface
                 )
             }
 
-            if (!result.whatsappMessage.isNullOrBlank()) {
+            if (!result.subtitle.isNullOrBlank() && result.subtitle != "Kirim pesan langsung via WhatsApp") {
                 Spacer(modifier = Modifier.height(10.dp))
                 Surface(
                     shape = RoundedCornerShape(12.dp),
@@ -378,7 +383,7 @@ private fun WhatsAppCard(result: ParsedQrResult, onDismiss: () -> Unit) {
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            text = "PESAN OTOMATIS",
+                            text = if (!result.whatsappMessage.isNullOrBlank()) "PESAN OTOMATIS" else "DETAIL TAUTAN",
                             fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = colorScheme.outline,
@@ -386,7 +391,7 @@ private fun WhatsAppCard(result: ParsedQrResult, onDismiss: () -> Unit) {
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "\"${result.whatsappMessage}\"",
+                            text = result.subtitle,
                             style = MaterialTheme.typography.bodyMedium,
                             color = colorScheme.onSurface
                         )
@@ -398,32 +403,123 @@ private fun WhatsAppCard(result: ParsedQrResult, onDismiss: () -> Unit) {
 
     Spacer(modifier = Modifier.height(16.dp))
 
-    // Prominent WhatsApp Action Button
-    Button(
-        onClick = {
-            SmartActionHandler.openWhatsApp(context, result.whatsappPhone ?: "", result.whatsappMessage)
-            onDismiss()
-        },
-        shape = RoundedCornerShape(14.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = waGreen,
-            contentColor = Color.White
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp)
-    ) {
-        Icon(
-            imageVector = Icons.Default.Chat,
-            contentDescription = null,
-            modifier = Modifier.size(20.dp)
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = "Kirim Pesan WhatsApp Langsung",
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold
-        )
+    // Prominent WhatsApp Action Buttons
+    if (hasBothWhatsApp) {
+        // Both Regular WhatsApp and WhatsApp Business installed
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Button(
+                onClick = {
+                    SmartActionHandler.openWhatsApp(
+                        context = context,
+                        rawPhone = result.whatsappPhone,
+                        message = result.whatsappMessage,
+                        actionUrl = result.actionUrl,
+                        targetPackage = WhatsAppPackage.REGULAR.packageName
+                    )
+                    onDismiss()
+                },
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = waGreen,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(52.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Chat,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "WhatsApp",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
+            }
+
+            Button(
+                onClick = {
+                    SmartActionHandler.openWhatsApp(
+                        context = context,
+                        rawPhone = result.whatsappPhone,
+                        message = result.whatsappMessage,
+                        actionUrl = result.actionUrl,
+                        targetPackage = WhatsAppPackage.BUSINESS.packageName
+                    )
+                    onDismiss()
+                },
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = waBusinessColor,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(52.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Store,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "WA Business",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
+            }
+        }
+    } else {
+        // Single app or fallback
+        val targetPkg = installedPackages.firstOrNull()
+        val btnLabel = when (targetPkg) {
+            WhatsAppPackage.REGULAR -> "Buka di WhatsApp"
+            WhatsAppPackage.BUSINESS -> "Buka di WhatsApp Business"
+            null -> "Buka Tautan WhatsApp"
+        }
+        val btnColor = if (targetPkg == WhatsAppPackage.BUSINESS) waBusinessColor else waGreen
+
+        Button(
+            onClick = {
+                SmartActionHandler.openWhatsApp(
+                    context = context,
+                    rawPhone = result.whatsappPhone,
+                    message = result.whatsappMessage,
+                    actionUrl = result.actionUrl,
+                    targetPackage = targetPkg?.packageName
+                )
+                onDismiss()
+            },
+            shape = RoundedCornerShape(14.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = btnColor,
+                contentColor = Color.White
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
+        ) {
+            Icon(
+                imageVector = if (targetPkg == WhatsAppPackage.BUSINESS) Icons.Default.Store else Icons.Default.Chat,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                text = btnLabel,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }
 

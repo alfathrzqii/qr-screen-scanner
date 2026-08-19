@@ -10,51 +10,95 @@ import android.provider.ContactsContract
 import android.widget.Toast
 import java.net.URLEncoder
 
+enum class WhatsAppPackage(val packageName: String, val appName: String) {
+    REGULAR("com.whatsapp", "WhatsApp"),
+    BUSINESS("com.whatsapp.w4b", "WhatsApp Business")
+}
+
 object SmartActionHandler {
 
+    fun isPackageInstalled(context: Context, packageName: String): Boolean {
+        return try {
+            context.packageManager.getPackageInfo(packageName, 0)
+            true
+        } catch (_: PackageManager.NameNotFoundException) {
+            false
+        }
+    }
+
+    fun getInstalledWhatsAppPackages(context: Context): List<WhatsAppPackage> {
+        val list = mutableListOf<WhatsAppPackage>()
+        if (isPackageInstalled(context, WhatsAppPackage.REGULAR.packageName)) {
+            list.add(WhatsAppPackage.REGULAR)
+        }
+        if (isPackageInstalled(context, WhatsAppPackage.BUSINESS.packageName)) {
+            list.add(WhatsAppPackage.BUSINESS)
+        }
+        return list
+    }
+
     /**
-     * Directly opens WhatsApp or WhatsApp Business, or falls back to Web.
+     * Directly opens WhatsApp or WhatsApp Business, or falls back to Web / native Chooser.
+     * Supports opening via phone + message or direct action URL (e.g. group invites or channel links).
      */
-    fun openWhatsApp(context: Context, rawPhone: String, message: String? = null) {
-        val cleanPhone = rawPhone.replace(Regex("[^0-9+]"), "").let {
-            if (it.startsWith("08")) "628" + it.substring(2)
-            else if (it.startsWith("+")) it.substring(1)
-            else it
+    fun openWhatsApp(
+        context: Context,
+        rawPhone: String? = null,
+        message: String? = null,
+        actionUrl: String? = null,
+        targetPackage: String? = null
+    ) {
+        val targetUrl = when {
+            !rawPhone.isNullOrBlank() -> {
+                val cleanPhone = rawPhone.replace(Regex("[^0-9+]"), "").let {
+                    if (it.startsWith("08")) "628" + it.substring(2)
+                    else if (it.startsWith("+")) it.substring(1)
+                    else it
+                }
+                val encodedMessage = message?.let {
+                    try { URLEncoder.encode(it, "UTF-8") } catch (_: Exception) { it }
+                } ?: ""
+                if (encodedMessage.isNotEmpty()) {
+                    "https://api.whatsapp.com/send?phone=$cleanPhone&text=$encodedMessage"
+                } else {
+                    "https://api.whatsapp.com/send?phone=$cleanPhone"
+                }
+            }
+            !actionUrl.isNullOrBlank() -> {
+                if (!actionUrl.startsWith("http://") && !actionUrl.startsWith("https://") && !actionUrl.startsWith("whatsapp://")) {
+                    "https://$actionUrl"
+                } else {
+                    actionUrl
+                }
+            }
+            else -> "https://api.whatsapp.com"
         }
 
-        val encodedMessage = message?.let {
-            try { URLEncoder.encode(it, "UTF-8") } catch (_: Exception) { it }
-        } ?: ""
-
-        val url = if (encodedMessage.isNotEmpty()) {
-            "https://api.whatsapp.com/send?phone=$cleanPhone&text=$encodedMessage"
-        } else {
-            "https://api.whatsapp.com/send?phone=$cleanPhone"
-        }
-
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl)).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
 
-        // Try specifically targeting WhatsApp or WhatsApp Business package first
-        val isWaInstalled = isPackageInstalled(context, "com.whatsapp")
-        val isWaBusinessInstalled = isPackageInstalled(context, "com.whatsapp.w4b")
-
-        if (isWaInstalled) {
-            intent.setPackage("com.whatsapp")
-        } else if (isWaBusinessInstalled) {
-            intent.setPackage("com.whatsapp.w4b")
+        if (!targetPackage.isNullOrBlank()) {
+            intent.setPackage(targetPackage)
+        } else {
+            val installed = getInstalledWhatsAppPackages(context)
+            if (installed.size == 1) {
+                intent.setPackage(installed.first().packageName)
+            }
         }
 
         try {
             context.startActivity(intent)
         } catch (_: Exception) {
-            // Fallback: Launch general browser/chooser without specific package
+            // Fallback: Launch general chooser/browser without specific package
             try {
-                val fallbackIntent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                val fallbackIntent = Intent(Intent.ACTION_VIEW, Uri.parse(targetUrl)).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
-                context.startActivity(fallbackIntent)
+                val chooser = Intent.createChooser(fallbackIntent, "Buka di WhatsApp").apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                context.startActivity(chooser)
             } catch (e: Exception) {
                 Toast.makeText(context, "Gagal membuka WhatsApp: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
             }
