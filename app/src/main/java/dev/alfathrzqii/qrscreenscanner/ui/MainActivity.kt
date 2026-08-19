@@ -65,6 +65,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import dev.alfathrzqii.qrscreenscanner.ui.capture.ScreenCaptureActivity
 import dev.alfathrzqii.qrscreenscanner.ui.history.HistoryScreen
 import dev.alfathrzqii.qrscreenscanner.ui.history.HistoryViewModel
@@ -77,6 +82,21 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val forceDashboard = intent.getBooleanExtra(EXTRA_FORCE_DASHBOARD, false)
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val isAutoScan = prefs.getBoolean(PREF_AUTO_SCAN, false)
+
+        if (isAutoScan && !forceDashboard) {
+            val scanIntent = Intent(this, ScreenCaptureActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra(ScreenCaptureActivity.EXTRA_AUTO_TRIGGER, true)
+            }
+            startActivity(scanIntent)
+            finish()
+            return
+        }
+
         setContent {
             QrScreenScannerTheme {
                 MainAppScreen(
@@ -90,6 +110,12 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    companion object {
+        const val EXTRA_FORCE_DASHBOARD = "EXTRA_FORCE_DASHBOARD"
+        const val PREFS_NAME = "app_settings"
+        const val PREF_AUTO_SCAN = "pref_auto_scan"
     }
 }
 
@@ -322,6 +348,74 @@ fun DashboardGuideSection(
             }
         }
 
+        // Quick Scan Mode Switch Card (Specially designed for Xiaomi Quick Ball)
+        val context = LocalContext.current
+        val prefs = remember { context.getSharedPreferences(MainActivity.PREFS_NAME, Context.MODE_PRIVATE) }
+        var isAutoScanEnabled by remember { mutableStateOf(prefs.getBoolean(MainActivity.PREF_AUTO_SCAN, false)) }
+
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isAutoScanEnabled) colorScheme.primaryContainer.copy(alpha = 0.5f) else colorScheme.surfaceContainerLow
+            ),
+            border = androidx.compose.foundation.BorderStroke(
+                width = if (isAutoScanEnabled) 1.5.dp else 1.dp,
+                color = if (isAutoScanEnabled) colorScheme.primary else colorScheme.outlineVariant.copy(alpha = 0.4f)
+            ),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (isAutoScanEnabled) colorScheme.primary else colorScheme.secondaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Bolt,
+                        contentDescription = null,
+                        tint = if (isAutoScanEnabled) colorScheme.onPrimary else colorScheme.onSecondaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(14.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Auto-Scan saat Buka App",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = if (isAutoScanEnabled) "Aktif: Membuka app dari Bola Pintas langsung memindai layar" else "Nonaktif: Membuka app akan menampilkan beranda ini",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Switch(
+                    checked = isAutoScanEnabled,
+                    onCheckedChange = { isChecked ->
+                        isAutoScanEnabled = isChecked
+                        prefs.edit().putBoolean(MainActivity.PREF_AUTO_SCAN, isChecked).apply()
+                    }
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(26.dp))
 
         // Step-by-step Setup Guide Header
@@ -395,8 +489,8 @@ fun DashboardGuideSection(
                 GuideStepItem(
                     stepNumber = "3",
                     icon = Icons.Default.CheckCircle,
-                    title = "Pilih Aplikasi 'Pindai Layar'",
-                    description = "Ganti salah satu slot pintasan dengan memilih Aplikasi > 'Pindai Layar'. Sekarang kamu bisa scan langsung dari bola melayang!"
+                    title = "Pilih Aplikasi 'QR Screen Scanner'",
+                    description = "Ganti salah satu slot dengan memilih Aplikasi > 'QR Screen Scanner'. Lalu aktifkan toggle 'Auto-Scan' di atas agar bola pintas langsung memindai layar seketika!"
                 )
             }
             1 -> {

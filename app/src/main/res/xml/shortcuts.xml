@@ -11,4 +11,19 @@
             android:targetPackage="dev.alfathrzqii.qrscreenscanner"
             android:targetClass="dev.alfathrzqii.qrscreenscanner.ui.DirectScanActivity" />
     </shortcut>
+    <shortcut
+        android:shortcutId="open_dashboard"
+        android:enabled="true"
+        android:icon="@drawable/ic_launcher_foreground"
+        android:shortcutShortLabel="@string/shortcut_dashboard_short"
+        android:shortcutLongLabel="@string/shortcut_dashboard_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="dev.alfathrzqii.qrscreenscanner"
+            android:targetClass="dev.alfathrzqii.qrscreenscanner.ui.MainActivity">
+            <extra
+                android:name="EXTRA_FORCE_DASHBOARD"
+                android:value="true" />
+        </intent>
+    </shortcut>
 </shortcuts>

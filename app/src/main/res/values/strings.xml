@@ -5,6 +5,10 @@
     <string name="direct_scan_label">Pindai Layar</string>
     <string name="direct_scan_short_label">Pindai Layar</string>
     <string name="direct_scan_long_label">Pindai QR di Layar</string>
+    <string name="shortcut_dashboard_short">Dashboard</string>
+    <string name="shortcut_dashboard_long">Buka Dashboard &amp; Riwayat</string>
+    <string name="auto_scan_title">Pindai Otomatis saat Buka Aplikasi</string>
+    <string name="auto_scan_desc">Pilih \'QR Screen Scanner\' di Bola Pintas Xiaomi. Saat diaktifkan, mengetuk bola pintas langsung memindai layar tanpa membuka beranda.</string>
     <string name="notification_channel_name">Screen Capture Service</string>
     <string name="notification_channel_desc">Used while capturing screen to decode QR codes</string>
     <string name="notification_service_running">Memindai QR di layar…</string>
