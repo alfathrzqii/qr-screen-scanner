@@ -186,13 +186,4 @@ object SmartActionHandler {
             Toast.makeText(context, "Tidak dapat mengirim email: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
         }
     }
-
-    private fun isPackageInstalled(context: Context, packageName: String): Boolean {
-        return try {
-            context.packageManager.getPackageInfo(packageName, 0)
-            true
-        } catch (_: PackageManager.NameNotFoundException) {
-            false
-        }
-    }
 }
